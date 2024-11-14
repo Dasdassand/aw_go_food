@@ -1,0 +1,53 @@
+version: '3.8'
+
+networks:
+  app_network:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres_container
+    environment:
+      POSTGRES_USER: yourusername
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: yourdatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - app_network
+
+  redis:
+    image: redis:latest
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    restart: always
+    networks:
+      - app_network
+
+  app:
+    build:
+      context: ../  # Путь к корню проекта, чтобы Docker видел все файлы
+      dockerfile: docker/Dockerfile  # Путь к Dockerfile внутри папки docker путь к Dockerfile
+    container_name: aw_go_food_container
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/yourdatabase
+      SPRING_DATASOURCE_USERNAME: yourusername
+      SPRING_DATASOURCE_PASSWORD: yourpassword
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    ports:
+      - "8080:8080"  # Порт вашего приложения
+    depends_on:
+      - postgres
+      - redis
+    restart: always
+    networks:
+      - app_network
+
+volumes:
+  pgdata:

@@ -1,5 +1,7 @@
 package com.aw.food.aw_go_food.scheduler
 
+import com.aw.audit.service.AuditSender
+import com.aw.food.aw_go_food.audit.AuditEvent
 import com.aw.food.aw_go_food.repository.FoodRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,7 +15,8 @@ import java.util.*
 
 @Component
 class ExpiredProductsScheduler(
-    private val foodRepository: FoodRepository
+    private val foodRepository: FoodRepository,
+    private val audit: AuditSender
 ) {
     @Autowired
     private lateinit var applicationContext: ApplicationContext
@@ -22,7 +25,6 @@ class ExpiredProductsScheduler(
     @Scheduled(cron = "0 0 9 * * ?", zone = "Europe/Moscow")
     fun checkExpiredProducts() {
         log.info("Starting check for expired products...")
-
         val expiredProducts = foodRepository.findAll().filter {
             it.expirationDate.isBefore(LocalDate.now())
         }
@@ -40,6 +42,7 @@ class ExpiredProductsScheduler(
             expiredProducts.forEach { product ->
                 foodRepository.delete(product)
                 log.info("Deleted expired product ID: ${product.id}, Name: ${product.name}")
+                audit.sendMessage("${AuditEvent.DELETE_FOOD.name} ${product.id}")
                 val schedulerProxy = applicationContext.getBean(ExpiredProductsScheduler::class.java)
                 schedulerProxy.evictCache(product.id)
             }

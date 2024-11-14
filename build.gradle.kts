@@ -23,7 +23,10 @@ configurations {
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
+
+val auditVersion = "0.0.1-SNAPSHOT"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-cache")
@@ -35,6 +38,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("com.audit.starter:audit:$auditVersion")
     compileOnly("org.projectlombok:lombok")
     runtimeOnly("org.postgresql:postgresql")
     annotationProcessor("org.projectlombok:lombok")
