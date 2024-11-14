@@ -13,6 +13,7 @@ import com.aw.food.aw_go_food.dto.enums.Operations
 import com.aw.food.aw_go_food.repository.FoodRepository
 import com.aw.food.aw_go_food.service.FoodService
 import com.aw.food.aw_go_food.validator.validate
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.crossstore.ChangeSetPersister
@@ -21,15 +22,17 @@ import java.util.*
 
 @Service
 class FoodServiceImpl(
-    val repository: FoodRepository,
-    val auditSender: AuditSender
+    private val repository: FoodRepository,
+    private val auditSender: AuditSender,
+    @Value("\${subsystem.code}")
+    private val subSystemCode: String
 ) : FoodService {
 
 
     override fun addFood(food: AddFoodDTO): GetFoodDTO {
         food.validate()
         val foodDto = repository.save(food.toEntity()).toDto()
-        auditSender.sendMessage("${AuditEvent.ADD_FOOD.name} ${foodDto.id}")
+        auditSender.sendMessage("$subSystemCode ${AuditEvent.ADD_FOOD.name} ${foodDto.id}")
         return foodDto
     }
 
@@ -44,19 +47,19 @@ class FoodServiceImpl(
     override fun editQuantity(request: ReduceQuantityDTO) = getFood(request.id).toFood().apply {
         quantity = when (request.operation) {
             Operations.MINUS -> {
-                auditSender.sendMessage("${AuditEvent.MINUS_FOOD.name} $id")
+                auditSender.sendMessage("$subSystemCode ${AuditEvent.MINUS_FOOD.name} $id")
                 quantity - request.count
             }
 
             Operations.PLUS -> {
-                auditSender.sendMessage("${AuditEvent.PLUS_FOOD.name} $id")
+                auditSender.sendMessage("$subSystemCode ${AuditEvent.PLUS_FOOD.name} $id")
                 quantity + request.count
             }
         }
 
         if (quantity == 0) {
             repository.delete(this)
-            auditSender.sendMessage("${AuditEvent.DELETE_FOOD.name} $id")
+            auditSender.sendMessage("$subSystemCode ${AuditEvent.DELETE_FOOD.name} $id")
         } else {
             repository.save(this)
         }

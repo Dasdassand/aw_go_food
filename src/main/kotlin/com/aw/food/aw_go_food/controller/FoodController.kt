@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
 @RestController
-class FoodController(val service: FoodService) {
+class FoodController(private val service: FoodService) {
 
     @PostMapping
     fun addFood(@RequestBody food: AddFoodDTO): GetFoodDTO {
